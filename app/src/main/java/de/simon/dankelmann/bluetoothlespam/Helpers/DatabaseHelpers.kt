@@ -44,7 +44,7 @@ class DatabaseHelpers {
          * gain new entries so existing installs re-sync them (see [syncBuiltInSets] /
          * [de.simon.dankelmann.bluetoothlespam.Datastore.SettingsRepository.builtInSeedVersion]).
          */
-        const val BUILT_IN_SEED_VERSION = 1
+        const val BUILT_IN_SEED_VERSION = 2
 
         fun saveAdvertisementSet(advertisementSet: AdvertisementSet,):Int{
 
@@ -312,8 +312,8 @@ class DatabaseHelpers {
 
         /**
          * Activates the dormant AdvertisementSetList/AdvertisementSetCollection schema (plan §8):
-         * one real [AdvertisementSetListEntity] per [AdvertisementSetType] (mirroring the 14
-         * seeding generators), joined to the sets already saved for that type, then the 6
+         * one real [AdvertisementSetListEntity] per [AdvertisementSetType] (mirroring the 18
+         * seeding generators), joined to the sets already saved for that type, then the 7
          * built-in collections ([builtInCollectionDefinitions]) joined to their member lists.
          * Called once from fresh-install seeding and once from `Migration_2_3` for existing
          * installs upgrading — both cases run against a DB that already has its
@@ -416,7 +416,7 @@ class DatabaseHelpers {
                 .map { signatureForEntity(it) }.toHashSet()
 
             // Built-in per-type lists are titled "<Type> List" (see seedBuiltInListsAndCollections).
-            val listIdByTitle = database.advertisementSetListDao().getAll().associate { it.title to it.id }
+            val listIdByTitle = database.advertisementSetListDao().getAll().associate { it.title to it.id }.toMutableMap()
             val nextPositionByListId = mutableMapOf<Int, Int>()
 
             var added = 0
@@ -428,13 +428,14 @@ class DatabaseHelpers {
                         if (!knownSignatures.add(signatureForSet(set))) return@forEach
 
                         val listTitle = "${context.getString(set.type.stringResId())} List"
-                        val listId = listIdByTitle[listTitle]
-                        if (listId == null) {
-                            // No built-in list for this type (e.g. a type added since the first seed).
-                            // Skip rather than create an orphan set -- a new type is a code change that
-                            // also updates seedBuiltInListsAndCollections.
-                            Log.w(_logTag, "syncBuiltInSets: no built-in list '$listTitle'; skipping new ${set.type.name} set")
-                            return@forEach
+                        // Built-in lists are created by seedBuiltInListsAndCollections on first
+                        // install; on upgrade, a type added since then has no list yet -- create
+                        // it here too rather than dropping the new sets.
+                        val listId: Int = listIdByTitle.getOrPut(listTitle) {
+                            Log.d(_logTag, "syncBuiltInSets: creating missing built-in list '$listTitle'")
+                            database.advertisementSetListDao().insertItem(
+                                AdvertisementSetListEntity(id = 0, title = listTitle),
+                            ).toInt()
                         }
 
                         val position = nextPositionByListId.getOrPut(listId) {

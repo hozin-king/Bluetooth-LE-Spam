@@ -9,6 +9,10 @@ enum class AdvertisementSetType {
     ADVERTISEMENT_TYPE_FAST_PAIRING_NON_PRODUCTION,
     ADVERTISEMENT_TYPE_FAST_PAIRING_PHONE_SETUP,
     ADVERTISEMENT_TYPE_FAST_PAIRING_DEBUG,
+    ADVERTISEMENT_TYPE_FAST_PAIRING_XIAOMI,
+    ADVERTISEMENT_TYPE_FAST_PAIRING_SONY,
+    ADVERTISEMENT_TYPE_FAST_PAIRING_JBL,
+    ADVERTISEMENT_TYPE_FAST_PAIRING_HUAWEI,
     ADVERTISEMENT_TYPE_CONTINUITY_NEW_AIRTAG,
     ADVERTISEMENT_TYPE_CONTINUITY_NEW_DEVICE,
     ADVERTISEMENT_TYPE_CONTINUITY_NOT_YOUR_DEVICE,
@@ -29,6 +33,11 @@ fun AdvertisementSetType.stringResId(): Int {
         AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_NON_PRODUCTION -> R.string.ad_set_type_fast_pairing_non_production
         AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_PHONE_SETUP -> R.string.ad_set_type_fast_pairing_phone_setup
         AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_DEBUG -> R.string.ad_set_type_fast_pairing_debug
+
+        AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_XIAOMI -> R.string.ad_set_type_fast_pairing_xiaomi
+        AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_SONY -> R.string.ad_set_type_fast_pairing_sony
+        AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_JBL -> R.string.ad_set_type_fast_pairing_jbl
+        AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_HUAWEI -> R.string.ad_set_type_fast_pairing_huawei
 
         AdvertisementSetType.ADVERTISEMENT_TYPE_CONTINUITY_NEW_AIRTAG -> R.string.ad_set_type_continuity_new_airtag
         AdvertisementSetType.ADVERTISEMENT_TYPE_CONTINUITY_NEW_DEVICE -> R.string.ad_set_type_continuity_new_device

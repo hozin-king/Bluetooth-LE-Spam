@@ -82,6 +82,9 @@ import java.util.concurrent.TimeUnit
 fun StartRoute(
     onNavigateToAdvertisement: () -> Unit,
     onNavigateToManageQuickStart: () -> Unit,
+    onNavigateToScheduler: () -> Unit,
+    onNavigateToPayloadBuilder: () -> Unit,
+    onNavigateToStatistics: () -> Unit,
 ) {
     val context = LocalContext.current
     val activity = context as Activity
@@ -166,6 +169,9 @@ fun StartRoute(
             }
         },
         onEditQuickStartClicked = onNavigateToManageQuickStart,
+        onSchedulerClicked = onNavigateToScheduler,
+        onPayloadBuilderClicked = onNavigateToPayloadBuilder,
+        onStatisticsClicked = onNavigateToStatistics,
     )
 }
 
@@ -291,6 +297,9 @@ fun StartScreen(
     quickStartCollections: List<AdvertisementSetCollectionEntity>,
     onQuickStartItemClicked: (AdvertisementSetCollectionEntity) -> Unit,
     onEditQuickStartClicked: () -> Unit,
+    onSchedulerClicked: () -> Unit,
+    onPayloadBuilderClicked: () -> Unit,
+    onStatisticsClicked: () -> Unit,
 ) {
     val isSeeding by viewModel.isSeeding.observeAsState(false)
     val appVersion by viewModel.appVersion.observeAsState("0.0.0")
@@ -334,6 +343,18 @@ fun StartScreen(
                 onItemClicked = onQuickStartItemClicked,
                 onEditClicked = onEditQuickStartClicked,
             )
+        }
+
+        item {
+            SchedulerEntryCard(onOpenClicked = onSchedulerClicked)
+        }
+
+        item {
+            PayloadBuilderCard(onClick = onPayloadBuilderClicked)
+        }
+
+        item {
+            StatisticsCard(onStatisticsClicked = onStatisticsClicked)
         }
 
         item {
@@ -511,6 +532,81 @@ private fun QuickStartSection(
                         Text(text = collection.title, style = MaterialTheme.typography.bodyLarge)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SchedulerEntryCard(onOpenClicked: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.sched_start_entry_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Text(
+                text = stringResource(R.string.sched_start_entry_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp),
+            )
+            Button(
+                onClick = onOpenClicked,
+                modifier = Modifier.padding(top = 12.dp),
+            ) {
+                Text(stringResource(R.string.sched_start_entry_open))
+            }
+        }
+    }
+}
+
+@Composable
+private fun PayloadBuilderCard(onClick: () -> Unit) {
+    Card(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Edit,
+                contentDescription = null,
+            )
+            Column(modifier = Modifier.padding(start = 12.dp)) {
+                Text(
+                    text = stringResource(R.string.pb_card_title),
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    text = stringResource(R.string.pb_card_subtitle),
+                    style = MaterialTheme.typography.bodyMedium,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun StatisticsCard(
+    onStatisticsClicked: () -> Unit,
+) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                text = stringResource(R.string.stats_title),
+                style = MaterialTheme.typography.titleMedium,
+            )
+            Button(
+                onClick = onStatisticsClicked,
+                modifier = Modifier.padding(top = 8.dp),
+            ) {
+                Text(stringResource(R.string.stats_open_button))
+
             }
         }
     }

@@ -52,6 +52,10 @@
     <string name="ad_set_type_fast_pairing_non_production">Fast Pairing Non-Production</string>
     <string name="ad_set_type_fast_pairing_phone_setup">Fast Pairing Phone Setup</string>
     <string name="ad_set_type_fast_pairing_debug">Fast Pairing Debug</string>
+    <string name="ad_set_type_fast_pairing_xiaomi">Fast Pairing Xiaomi</string>
+    <string name="ad_set_type_fast_pairing_sony">Fast Pairing Sony</string>
+    <string name="ad_set_type_fast_pairing_jbl">Fast Pairing JBL</string>
+    <string name="ad_set_type_fast_pairing_huawei">Fast Pairing Huawei</string>
     <string name="ad_set_type_continuity_new_device">New Apple Device</string>
     <string name="ad_set_type_continuity_new_airtag">New Airtag</string>
     <string name="ad_set_type_continuity_not_your_device">Not Your Device</string>
@@ -67,6 +71,16 @@
     <string name="spam_detecting_title">Detecting Spam</string>
     <string name="spam_detecting_text">Detecting Flipper Zero and other devices</string>
     <string name="spam_detected_title">Spam Detected</string>
+
+    <!-- Spam detection alerts (feature/spam-detection) -->
+    <string name="sd_notification_channel_name">Spam Detection Alerts</string>
+    <string name="sd_notification_title">Spam detected: %1$s</string>
+    <string name="sd_notification_text">Tap to open the spam detector</string>
+    <string name="sd_banner_title">%1$d spam packages detected in the last 60s</string>
+    <string name="sd_banner_breakdown">%1$s &#215; %2$d</string>
+    <string name="sd_banner_reset">Reset</string>
+    <string name="sd_pref_title">Spam Detection Alerts</string>
+    <string name="sd_pref_summary">Show a notification when a spam package is detected (at most one per minute per spam type)</string>
 
     <!-- Log Settings -->
     <string name="preference_key_enable_logging">enable_logging</string>
@@ -92,5 +106,81 @@
     <string name="missing_permissions_title">Missing Permissions</string>
     <string name="missing_permissions_text">Some permissions are missing. Without them, Bluetooth LE Spam will not work properly.</string>
     <string name="missing_permissions_grant">Grant Permissions</string>
+
+
+
+    <!-- Scheduler -->
+    <string name="sched_enable">Enable scheduled spam</string>
+    <string name="sched_enable_summary">Automatically start advertising at the scheduled time</string>
+    <string name="sched_time">Time</string>
+    <string name="sched_days">Days</string>
+    <string name="sched_days_summary">No days selected = runs daily</string>
+    <string name="sched_collection">Advertisement collection</string>
+    <string name="sched_collection_kitchen_sink">Kitchen Sink (all)</string>
+    <string name="sched_next_run">Next run: %1$s</string>
+    <string name="sched_next_run_disabled">Scheduler is disabled</string>
+    <string name="sched_exact_alarm_unavailable">Exact alarms are not granted — the run time may be approximate. Allow exact alarms in system settings for precise timing.</string>
+    <string name="sched_start_entry_title">Scheduled Spam</string>
+    <string name="sched_start_entry_summary">Automatically start advertising on a schedule</string>
+    <string name="sched_start_entry_open">Open</string>
+    <!-- Payload Builder -->
+    <string name="pb_card_title">Custom Payload Builder</string>
+    <string name="pb_card_subtitle">Build and advertise your own BLE payload</string>
+    <string name="pb_name_label">Name</string>
+    <string name="pb_manufacturer_id_label">Manufacturer ID (decimal)</string>
+    <string name="pb_manufacturer_id_error">Enter a value between 0 and 65535 (e.g. 76 = Apple)</string>
+    <string name="pb_payload_hex_label">Payload (hex)</string>
+    <string name="pb_payload_hex_error_empty">Payload is required</string>
+    <string name="pb_payload_hex_error_odd_length">Hex string must have an even length</string>
+    <string name="pb_payload_hex_error_invalid_chars">Only hex characters (0-9, A-F) are allowed</string>
+    <string name="pb_payload_hex_error_too_long">Payload is too long — legacy advertisements allow at most 27 bytes (54 hex characters)</string>
+    <string name="pb_payload_bytes">%1$d / %2$d bytes</string>
+    <string name="pb_tx_power_label">TX Power</string>
+    <string name="pb_advertise_now">Advertise now</string>
+    <string name="pb_save">Save</string>
+    <string name="pb_saved">Saved to "Custom Payloads"</string>
+    <string name="pb_save_failed">Could not save the custom payload</string>
+    <string name="pb_list_title">Custom Payloads</string>
+<!-- TX & Interval tuning -->
+    <string name="tx_section_title">TX &amp; Interval</string>
+    <string name="tx_power_title">TX Power</string>
+    <string name="tx_power_summary">Global transmit power applied to every advertisement set (a per-target override below takes precedence)</string>
+    <string name="tx_interval_title">Advertising Interval</string>
+    <string name="tx_interval_summary">How often advertisement packets are sent — applied to every advertisement set at start</string>
+    <string name="tx_interval_low_latency">Low latency (~100 ms)</string>
+    <string name="tx_interval_balanced">Balanced (~1 s)</string>
+    <string name="tx_interval_low_power">Low power (~10 s)</string>
+    <string name="tx_per_target_title">Per-target TX power</string>
+    <string name="tx_per_target_summary">Overrides the global TX power for advertisement sets targeting the given platform</string>
+    <string name="tx_default">Default (follow global)</string>
+    <string name="tx_range_test_title">Range test mode</string>
+    <string name="tx_range_test_summary">Safety gate for the Range Test screen — advertising the test beacon requires this to be on</string>
+    <string name="tx_open_range_test">Open Range Test</string>
+    <string name="tx_range_test_beacon_name">Range Test Beacon</string>
+    <string name="tx_range_test_start">Start</string>
+    <string name="tx_range_test_stop">Stop</string>
+    <string name="tx_range_test_elapsed">Elapsed</string>
+    <string name="tx_range_test_status_advertising">Advertising…</string>
+    <string name="tx_range_test_status_idle">Idle</string>
+    <string name="tx_range_test_disabled_hint">Range test mode is off — enable it in Preferences → TX &amp; Interval first.</string>
+<!-- Spam Statistics -->
+    <string name="stats_title">Statistics</string>
+    <string name="stats_open_button">Statistics</string>
+    <string name="stats_summary_title">Summary</string>
+    <string name="stats_total_sessions">Total sessions</string>
+    <string name="stats_total_spam_time">Total spam time</string>
+    <string name="stats_per_target_title">Sessions per target</string>
+    <string name="stats_recent_title">Recent sessions</string>
+    <string name="stats_no_sessions">No spam sessions recorded yet.</string>
+    <string name="stats_open_session">In progress</string>
+    <string name="stats_clear">Clear statistics</string>
+    <string name="stats_clear_title">Clear statistics?</string>
+    <string name="stats_clear_message">This will delete all recorded spam sessions. This cannot be undone.</string>
+    <string name="stats_clear_confirm">Clear</string>
+    <string name="stats_cancel">Cancel</string>
+    <string name="stats_hours_short">h</string>
+    <string name="stats_minutes_short">m</string>
+    <string name="stats_seconds_short">s</string>
+
 
 </resources>

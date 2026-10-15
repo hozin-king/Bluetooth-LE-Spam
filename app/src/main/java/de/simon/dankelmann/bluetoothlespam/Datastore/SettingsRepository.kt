@@ -31,7 +31,25 @@ object SettingsKeys {
     val BLUR_ENABLED = booleanPreferencesKey("blur_enabled")
     val ALLOW_CUSTOM_SWIFT_PAIR_NAMES = booleanPreferencesKey("allow_custom_swift_pair_names")
     val SPAM_DETECTION_BACKGROUND_ENABLED = booleanPreferencesKey("spam_detection_background_enabled")
+    val SPAM_DETECTION_ALERT_ENABLED = booleanPreferencesKey("spam_detection_alert_enabled")
     val BUILT_IN_SEED_VERSION = intPreferencesKey("built_in_seed_version")
+    // Automatic spam scheduler (AlarmManager). SCHEDULER_DAYS holds Calendar day-of-week
+    // numbers (1=Sunday..7=Saturday) as a comma-separated string, e.g. "2,3,4,5,6" for
+    // Mon-Fri; an empty string means daily. SCHEDULER_COLLECTION_ID -1 = kitchen sink (all).
+    val SCHEDULER_ENABLED = booleanPreferencesKey("scheduler_enabled")
+    val SCHEDULER_HOUR = intPreferencesKey("scheduler_hour")
+    val SCHEDULER_MINUTE = intPreferencesKey("scheduler_minute")
+    val SCHEDULER_DAYS = stringPreferencesKey("scheduler_days")
+    val SCHEDULER_COLLECTION_ID = intPreferencesKey("scheduler_collection_id")
+
+    // TX tuning (tx-tuning feature): persisted TX power / advertising interval / per-target
+    // overrides / range-test mode. Read synchronously via [SettingsRepository.current] on the
+    // advertisement choke point; defaults keep behavior identical to the hardcoded
+    // TX_POWER_HIGH + AdvertisingSetParameters.INTERVAL_MIN the generators use.
+    val TX_TUNING_POWER = stringPreferencesKey("tx_tuning_power")
+    val TX_TUNING_INTERVAL = intPreferencesKey("tx_tuning_interval")
+    val TX_TUNING_PER_TARGET = stringPreferencesKey("tx_tuning_per_target")
+    val TX_TUNING_RANGE_TEST = booleanPreferencesKey("tx_tuning_range_test")
 }
 
 /**
@@ -141,8 +159,48 @@ class SettingsRepository private constructor(context: Context) {
         dataStore.edit { it[SettingsKeys.SPAM_DETECTION_BACKGROUND_ENABLED] = enabled }
     }
 
+    suspend fun setSpamDetectionAlertEnabled(enabled: Boolean) {
+        dataStore.edit { it[SettingsKeys.SPAM_DETECTION_ALERT_ENABLED] = enabled }
+    }
+
     suspend fun setBuiltInSeedVersion(version: Int) {
         dataStore.edit { it[SettingsKeys.BUILT_IN_SEED_VERSION] = version }
+    }
+
+    suspend fun setSchedulerEnabled(enabled: Boolean) {
+        dataStore.edit { it[SettingsKeys.SCHEDULER_ENABLED] = enabled }
+    }
+
+    suspend fun setSchedulerHour(hour: Int) {
+        dataStore.edit { it[SettingsKeys.SCHEDULER_HOUR] = hour }
+    }
+
+    suspend fun setSchedulerMinute(minute: Int) {
+        dataStore.edit { it[SettingsKeys.SCHEDULER_MINUTE] = minute }
+    }
+
+    suspend fun setSchedulerDays(days: String) {
+        dataStore.edit { it[SettingsKeys.SCHEDULER_DAYS] = days }
+    }
+
+    suspend fun setSchedulerCollectionId(collectionId: Int) {
+        dataStore.edit { it[SettingsKeys.SCHEDULER_COLLECTION_ID] = collectionId }
+    }
+
+    suspend fun setTxTuningPower(powerLevelName: String) {
+        dataStore.edit { it[SettingsKeys.TX_TUNING_POWER] = powerLevelName }
+    }
+
+    suspend fun setTxTuningInterval(interval: Int) {
+        dataStore.edit { it[SettingsKeys.TX_TUNING_INTERVAL] = interval }
+    }
+
+    suspend fun setTxTuningPerTarget(json: String) {
+        dataStore.edit { it[SettingsKeys.TX_TUNING_PER_TARGET] = json }
+    }
+
+    suspend fun setTxTuningRangeTest(enabled: Boolean) {
+        dataStore.edit { it[SettingsKeys.TX_TUNING_RANGE_TEST] = enabled }
     }
 
     /** Fire-and-forget variants for non-suspend call sites (e.g. [ThemeManager]) — launched on
@@ -169,6 +227,46 @@ class SettingsRepository private constructor(context: Context) {
 
     fun setSpamDetectionBackgroundEnabledAsync(enabled: Boolean) {
         scope.launch { setSpamDetectionBackgroundEnabled(enabled) }
+    }
+
+    fun setSpamDetectionAlertEnabledAsync(enabled: Boolean) {
+        scope.launch { setSpamDetectionAlertEnabled(enabled) }
+    }
+
+    fun setSchedulerEnabledAsync(enabled: Boolean) {
+        scope.launch { setSchedulerEnabled(enabled) }
+    }
+
+    fun setSchedulerHourAsync(hour: Int) {
+        scope.launch { setSchedulerHour(hour) }
+    }
+
+    fun setSchedulerMinuteAsync(minute: Int) {
+        scope.launch { setSchedulerMinute(minute) }
+    }
+
+    fun setSchedulerDaysAsync(days: String) {
+        scope.launch { setSchedulerDays(days) }
+    }
+
+    fun setSchedulerCollectionIdAsync(collectionId: Int) {
+        scope.launch { setSchedulerCollectionId(collectionId) }
+    }
+
+    fun setTxTuningPowerAsync(powerLevelName: String) {
+        scope.launch { setTxTuningPower(powerLevelName) }
+    }
+
+    fun setTxTuningIntervalAsync(interval: Int) {
+        scope.launch { setTxTuningInterval(interval) }
+    }
+
+    fun setTxTuningPerTargetAsync(json: String) {
+        scope.launch { setTxTuningPerTarget(json) }
+    }
+
+    fun setTxTuningRangeTestAsync(enabled: Boolean) {
+        scope.launch { setTxTuningRangeTest(enabled) }
     }
 
     companion object {

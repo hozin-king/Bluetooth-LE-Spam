@@ -3,7 +3,7 @@ package de.simon.dankelmann.bluetoothlespam.Database
 import de.simon.dankelmann.bluetoothlespam.Enums.AdvertisementSetType
 
 /**
- * The 6 built-in collections (plan §8) — single source of truth for which
+ * The 7 built-in collections (plan §8) — single source of truth for which
  * [AdvertisementSetType]s belong to each, shared by the DB seeding pass
  * ([de.simon.dankelmann.bluetoothlespam.Helpers.DatabaseHelpers]) and the Advertisement
  * Collection screen's cards.
@@ -52,6 +52,15 @@ val builtInCollectionDefinitions: List<BuiltInCollectionDefinition> = listOf(
         ),
     ),
     BuiltInCollectionDefinition(
+        title = "Vendor Collection",
+        types = listOf(
+            AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_XIAOMI,
+            AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_SONY,
+            AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_JBL,
+            AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_HUAWEI,
+        ),
+    ),
+    BuiltInCollectionDefinition(
         title = "Kitchen Sink Collection",
         types = listOf(
             AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_DEVICE,
@@ -68,6 +77,10 @@ val builtInCollectionDefinitions: List<BuiltInCollectionDefinition> = listOf(
             AdvertisementSetType.ADVERTISEMENT_TYPE_SWIFT_PAIRING,
             AdvertisementSetType.ADVERTISEMENT_TYPE_LOVESPOUSE_PLAY,
             AdvertisementSetType.ADVERTISEMENT_TYPE_LOVESPOUSE_STOP,
+            AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_XIAOMI,
+            AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_SONY,
+            AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_JBL,
+            AdvertisementSetType.ADVERTISEMENT_TYPE_FAST_PAIRING_HUAWEI,
         ),
     ),
 )

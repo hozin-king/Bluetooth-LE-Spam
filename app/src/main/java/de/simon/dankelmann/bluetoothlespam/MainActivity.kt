@@ -60,9 +60,13 @@ import de.simon.dankelmann.bluetoothlespam.ui.advertisement.AdvertisementRoute
 import de.simon.dankelmann.bluetoothlespam.ui.advertisementcollection.AdvertisementCollectionRoute
 import de.simon.dankelmann.bluetoothlespam.ui.deviceselector.GroupEditorRoute
 import de.simon.dankelmann.bluetoothlespam.ui.preferences.PreferencesRoute
+import de.simon.dankelmann.bluetoothlespam.ui.payloadBuilder.PayloadBuilderRoute
 import de.simon.dankelmann.bluetoothlespam.ui.quickstart.ManageQuickStartRoute
+import de.simon.dankelmann.bluetoothlespam.ui.scheduler.SchedulerRoute
+import de.simon.dankelmann.bluetoothlespam.ui.rangeTest.RangeTestRoute
 import de.simon.dankelmann.bluetoothlespam.ui.spamDetector.SpamDetectorRoute
 import de.simon.dankelmann.bluetoothlespam.ui.start.StartRoute
+import de.simon.dankelmann.bluetoothlespam.ui.stats.StatsRoute
 import de.simon.dankelmann.bluetoothlespam.ui.theme.FloatingNavBar
 import de.simon.dankelmann.bluetoothlespam.ui.theme.SpecterTheme
 import de.simon.dankelmann.bluetoothlespam.ui.theme.floatingNavDestinations
@@ -233,13 +237,19 @@ class MainActivity : AppCompatActivity() {
                                         SpecterDestinations.START -> StartRoute(
                                             onNavigateToAdvertisement = { navController.navigate(SpecterDestinations.ADVERTISEMENT) },
                                             onNavigateToManageQuickStart = { navController.navigate(SpecterDestinations.MANAGE_QUICK_START) },
+                                            onNavigateToScheduler = { navController.navigate(SpecterDestinations.SCHEDULER) },
+                                            onNavigateToPayloadBuilder = { navController.navigate(SpecterDestinations.PAYLOAD_BUILDER) },
+                                            onNavigateToStatistics = { navController.navigate(SpecterDestinations.STATS) },
                                         )
                                         SpecterDestinations.ADVERTISEMENT_COLLECTION -> AdvertisementCollectionRoute(
                                             onNavigateToAdvertisement = { navController.navigate(SpecterDestinations.ADVERTISEMENT) },
                                             onCreateCustomGroup = { navController.navigate(SpecterDestinations.GROUP_EDITOR) },
                                         )
                                         SpecterDestinations.SPAM_DETECTOR -> SpamDetectorRoute()
-                                        SpecterDestinations.PREFERENCES -> PreferencesRoute(onTxPowerClicked = { showSetTxPowerDialog() })
+                                        SpecterDestinations.PREFERENCES -> PreferencesRoute(
+                                            onTxPowerClicked = { showSetTxPowerDialog() },
+                                            onNavigateToRangeTest = { navController.navigate(SpecterDestinations.RANGE_TEST) },
+                                        )
                                     }
                                 }
                             }
@@ -250,6 +260,18 @@ class MainActivity : AppCompatActivity() {
                             composable(SpecterDestinations.MANAGE_QUICK_START) {
                                 ManageQuickStartRoute()
                             }
+                            composable(SpecterDestinations.SCHEDULER) {
+                                SchedulerRoute()
+                            }
+                            composable(SpecterDestinations.PAYLOAD_BUILDER) {
+                                PayloadBuilderRoute(
+                                    onNavigateToAdvertisement = { navController.navigate(SpecterDestinations.ADVERTISEMENT) },
+                                )
+                            }
+                            composable(SpecterDestinations.RANGE_TEST) {
+                                RangeTestRoute()
+                            }
+                            composable(SpecterDestinations.STATS) { StatsRoute() }
                         }
                     }
 
@@ -320,6 +342,10 @@ class MainActivity : AppCompatActivity() {
                         initialLevel = currentTxPowerLevel,
                         onLevelChanged = { newTxPowerLevel ->
                             app.advertisementService.setTxPowerLevel(newTxPowerLevel)
+                            // Persist the choice so it survives restarts and flows through the
+                            // TX-tuning choke point on the next advertisement.
+                            SettingsRepository.getInstance(this@MainActivity)
+                                .setTxTuningPowerAsync(newTxPowerLevel.name)
                         },
                     )
                 }
@@ -345,6 +371,10 @@ private val detailRouteTitles = mapOf(
     SpecterDestinations.ADVERTISEMENT to "Advertisement",
     SpecterDestinations.GROUP_EDITOR to "Create custom group",
     SpecterDestinations.MANAGE_QUICK_START to "Manage Quick Start",
+    SpecterDestinations.SCHEDULER to "Scheduled Spam",
+    SpecterDestinations.PAYLOAD_BUILDER to "Custom Payload Builder",
+    SpecterDestinations.RANGE_TEST to "Range Test",
+    SpecterDestinations.STATS to "Statistics",
 )
 
 @OptIn(ExperimentalMaterial3Api::class)

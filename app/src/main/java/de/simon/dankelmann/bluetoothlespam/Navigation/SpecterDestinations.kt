@@ -12,4 +12,8 @@ object SpecterDestinations {
     const val PREFERENCES = "preferences"
     const val GROUP_EDITOR = "groupEditor"
     const val MANAGE_QUICK_START = "manageQuickStart"
+    const val SCHEDULER = "scheduler"
+    const val PAYLOAD_BUILDER = "payloadBuilder"
+    const val RANGE_TEST = "rangeTest"
+    const val STATS = "stats"
 }

@@ -14,17 +14,21 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.NotificationsActive
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.airbnb.lottie.compose.LottieAnimation
 import com.airbnb.lottie.compose.LottieCompositionSpec
@@ -33,6 +37,7 @@ import com.airbnb.lottie.compose.animateLottieCompositionAsState
 import com.airbnb.lottie.compose.rememberLottieComposition
 import de.simon.dankelmann.bluetoothlespam.Enums.FlipperDeviceType
 import de.simon.dankelmann.bluetoothlespam.Enums.SpamPackageType
+import de.simon.dankelmann.bluetoothlespam.Enums.stringRes
 import de.simon.dankelmann.bluetoothlespam.Models.FlipperDeviceScanResult
 import de.simon.dankelmann.bluetoothlespam.Models.SpamPackageScanResult
 import de.simon.dankelmann.bluetoothlespam.R
@@ -49,6 +54,8 @@ fun SpamDetectorScreen(
     flipperDevices: List<FlipperDeviceScanResult>,
     spamPackages: List<SpamPackageScanResult>,
     onToggleClicked: () -> Unit,
+    spamDetectionCounts: Map<SpamPackageType, Int> = emptyMap(),
+    onResetSpamCountsClicked: () -> Unit = {},
 ) {
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
@@ -65,6 +72,18 @@ fun SpamDetectorScreen(
     ) {
         item {
             HeaderCard(isDetecting = isDetecting, onToggleClicked = onToggleClicked)
+        }
+
+        // Detection indicator (feature/spam-detection): shows only while at least one spam
+        // package was detected in the last 60 seconds; the scan service expires counts
+        // automatically via its housekeeping loop.
+        if (spamDetectionCounts.values.sum() > 0) {
+            item {
+                SpamDetectionBanner(
+                    spamDetectionCounts = spamDetectionCounts,
+                    onResetClicked = onResetSpamCountsClicked,
+                )
+            }
         }
 
         item {
@@ -127,6 +146,55 @@ private fun HeaderCard(isDetecting: Boolean, onToggleClicked: () -> Unit) {
                         contentDescription = if (isDetecting) "Stop scanning" else "Start scanning",
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SpamDetectionBanner(
+    spamDetectionCounts: Map<SpamPackageType, Int>,
+    onResetClicked: () -> Unit,
+) {
+    val total = spamDetectionCounts.values.sum()
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+        ),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                imageVector = Icons.Filled.NotificationsActive,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                modifier = Modifier.size(32.dp),
+            )
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 12.dp),
+            ) {
+                Text(
+                    text = stringResource(R.string.sd_banner_title, total),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onTertiaryContainer,
+                )
+                spamDetectionCounts.forEach { (type, count) ->
+                    Text(
+                        text = stringResource(R.string.sd_banner_breakdown, stringResource(type.stringRes()), count),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer,
+                    )
+                }
+            }
+            TextButton(onClick = onResetClicked) {
+                Text(text = stringResource(R.string.sd_banner_reset))
             }
         }
     }

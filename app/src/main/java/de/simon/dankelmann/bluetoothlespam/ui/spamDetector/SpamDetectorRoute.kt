@@ -5,6 +5,7 @@ import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateListOf
@@ -77,11 +78,18 @@ fun SpamDetectorRoute() {
 
     val isDetecting by viewModel.isDetecting.observeAsState(false)
 
+    // Detection-indicator counters (feature/spam-detection): per-type counts of spam packages
+    // detected in the last 60s, kept in-memory by the scan service.
+    val scanService = (context.applicationContext as BleSpamApplication).scanService
+    val spamDetectionCounts by scanService.spamDetectionCounts.collectAsState()
+
     SpamDetectorScreen(
         isDetecting = isDetecting == true,
         flipperDevices = flipperDevices,
         spamPackages = spamPackages,
         onToggleClicked = { onToggleButtonClicked(context, viewModel) },
+        spamDetectionCounts = spamDetectionCounts,
+        onResetSpamCountsClicked = { scanService.resetSpamDetectionCounts() },
     )
 }
 

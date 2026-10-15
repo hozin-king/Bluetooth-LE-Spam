@@ -18,11 +18,14 @@ import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import de.simon.dankelmann.bluetoothlespam.BleSpamApplication
 import de.simon.dankelmann.bluetoothlespam.Enums.AdvertisementError
+import de.simon.dankelmann.bluetoothlespam.Enums.AdvertisementSetType
 import de.simon.dankelmann.bluetoothlespam.Enums.AdvertisementState
+import de.simon.dankelmann.bluetoothlespam.Enums.AdvertisementTarget
 import de.simon.dankelmann.bluetoothlespam.Enums.getDrawableId
 import de.simon.dankelmann.bluetoothlespam.Enums.stringResId
 import de.simon.dankelmann.bluetoothlespam.Interfaces.Callbacks.IAdvertisementServiceCallback
 import de.simon.dankelmann.bluetoothlespam.Interfaces.Callbacks.IAdvertisementSetQueueHandlerCallback
+import de.simon.dankelmann.bluetoothlespam.Helpers.SpamStatsManager
 import de.simon.dankelmann.bluetoothlespam.MainActivity
 import de.simon.dankelmann.bluetoothlespam.Models.AdvertisementSet
 import de.simon.dankelmann.bluetoothlespam.Navigation.SpecterDestinations
@@ -36,6 +39,8 @@ class AdvertisementForegroundService: IAdvertisementServiceCallback, IAdvertisem
     private val _channelDescription = "Bluetooth Le Spam Notifications"
     private var _currentAdvertisementSet:AdvertisementSet? = null
     private val _binder: IBinder = LocalBinder()
+    // Spam session statistics (additive hook — does not alter advertising behavior).
+    private var _statsSessionId: Long? = null
 
     companion object {
         private const val NOTIFICATION_ID = 1
@@ -85,6 +90,8 @@ class AdvertisementForegroundService: IAdvertisementServiceCallback, IAdvertisem
         val app = applicationContext as BleSpamApplication
         app.advertisementService.removeAdvertisementServiceCallback(this)
         app.queueHandler.removeAdvertisementQueueHandlerCallback(this)
+        // Close any open stats session when the service dies — purely additive.
+        endStatsSession()
 
         super.onDestroy()
     }
@@ -268,11 +275,31 @@ class AdvertisementForegroundService: IAdvertisementServiceCallback, IAdvertisem
     override fun onAdvertisementSetStart(advertisementSet: AdvertisementSet?) {
         _currentAdvertisementSet = advertisementSet
         updateNotification(advertisementSet)
+        // Stats hook (additive): a queued set can start while another is open — close the
+        // previous session first, then log the new one.
+        endStatsSession()
+        val statsManager = SpamStatsManager.getInstance(applicationContext)
+        statsManager.beginSessionAsync(
+            target = advertisementSet?.target?.name ?: AdvertisementTarget.ADVERTISEMENT_TARGET_UNDEFINED.name,
+            // Each start callback covers exactly one advertisement set.
+            setCount = 1,
+            setType = advertisementSet?.type?.name ?: AdvertisementSetType.ADVERTISEMENT_TYPE_UNDEFINED.name,
+            onStarted = { _statsSessionId = it },
+        )
     }
 
     override fun onAdvertisementSetStop(advertisementSet: AdvertisementSet?) {
         _currentAdvertisementSet = advertisementSet
         updateNotification(advertisementSet)
+        // Stats hook (additive): close the open session for this set.
+        endStatsSession()
+    }
+
+    private fun endStatsSession() {
+        _statsSessionId?.let {
+            SpamStatsManager.getInstance(applicationContext).endSessionAsync(it)
+            _statsSessionId = null
+        }
     }
 
     override fun onAdvertisementSetSucceeded(advertisementSet: AdvertisementSet?) {

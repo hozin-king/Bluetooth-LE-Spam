@@ -1,5 +1,6 @@
 package de.simon.dankelmann.bluetoothlespam.ui.preferences
 
+import android.bluetooth.le.AdvertisingSetParameters as FrameworkAdvertisingSetParameters
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -18,6 +19,9 @@ import androidx.fragment.app.FragmentActivity
 import androidx.preference.PreferenceManager
 import de.simon.dankelmann.bluetoothlespam.Datastore.SettingsKeys
 import de.simon.dankelmann.bluetoothlespam.Datastore.SettingsRepository
+import de.simon.dankelmann.bluetoothlespam.Enums.AdvertisementTarget
+import de.simon.dankelmann.bluetoothlespam.Enums.TxPowerLevel
+import de.simon.dankelmann.bluetoothlespam.Helpers.AdvertisementTuningHelper
 import de.simon.dankelmann.bluetoothlespam.Helpers.LogDirectoryPicker
 import de.simon.dankelmann.bluetoothlespam.Helpers.LogFileManager
 import de.simon.dankelmann.bluetoothlespam.Helpers.ThemeManager
@@ -30,7 +34,10 @@ import de.simon.dankelmann.bluetoothlespam.ui.theme.ThemeModeOption
  * own. SAF folder picker kept via `rememberLauncherForActivityResult` (plan §5).
  */
 @Composable
-fun PreferencesRoute(onTxPowerClicked: () -> Unit) {
+fun PreferencesRoute(
+    onTxPowerClicked: () -> Unit,
+    onNavigateToRangeTest: () -> Unit,
+) {
     val context = LocalContext.current
     val activity = context as FragmentActivity
 
@@ -72,6 +79,14 @@ fun PreferencesRoute(onTxPowerClicked: () -> Unit) {
     val blurEnabled = settings[SettingsKeys.BLUR_ENABLED] ?: true
     val allowCustomSwiftPairNames = settings[SettingsKeys.ALLOW_CUSTOM_SWIFT_PAIR_NAMES] ?: false
     val spamDetectionBackgroundEnabled = settings[SettingsKeys.SPAM_DETECTION_BACKGROUND_ENABLED] ?: false
+    val spamDetectionAlertEnabled = settings[SettingsKeys.SPAM_DETECTION_ALERT_ENABLED] ?: true
+
+    // TX & Interval tuning (DataStore-backed; choke point in the advertisement services picks
+    // these up on every startAdvertisement).
+    val txPowerLevel = AdvertisementTuningHelper.txPowerLevelFromName(settings[SettingsKeys.TX_TUNING_POWER])
+    val txInterval = settings[SettingsKeys.TX_TUNING_INTERVAL] ?: FrameworkAdvertisingSetParameters.INTERVAL_MIN
+    val txPerTarget = AdvertisementTuningHelper.parsePerTargetMap(settings[SettingsKeys.TX_TUNING_PER_TARGET] ?: "{}")
+    val rangeTestEnabled = settings[SettingsKeys.TX_TUNING_RANGE_TEST] ?: false
 
     val defaultPrefs = PreferenceManager.getDefaultSharedPreferences(context)
     val legacyAdvertisingKey = context.getString(R.string.preference_key_use_legacy_advertising)
@@ -104,10 +119,35 @@ fun PreferencesRoute(onTxPowerClicked: () -> Unit) {
             defaultPrefs.edit().putString(intervalKey, value).apply()
         },
         onTxPowerClicked = onTxPowerClicked,
+        txPowerLevel = txPowerLevel,
+        onTxPowerLevelSelected = { level ->
+            settingsRepository.setTxTuningPowerAsync(level.name)
+        },
+        txInterval = txInterval,
+        onTxIntervalSelected = { interval ->
+            settingsRepository.setTxTuningIntervalAsync(interval)
+        },
+        txPerTarget = txPerTarget,
+        onTxPerTargetSelected = { target: AdvertisementTarget, level: TxPowerLevel? ->
+            val updated = txPerTarget.toMutableMap()
+            if (level == null) updated.remove(target) else updated[target] = level
+            settingsRepository.setTxTuningPerTargetAsync(
+                AdvertisementTuningHelper.serializePerTargetMap(updated)
+            )
+        },
+        rangeTestEnabled = rangeTestEnabled,
+        onRangeTestEnabledChanged = { enabled ->
+            settingsRepository.setTxTuningRangeTestAsync(enabled)
+        },
+        onOpenRangeTestClicked = onNavigateToRangeTest,
         spamDetectionBackgroundEnabled = spamDetectionBackgroundEnabled,
         onSpamDetectionBackgroundEnabledChanged = { enabled ->
             settingsRepository.setSpamDetectionBackgroundEnabledAsync(enabled)
             if (enabled) requestBackgroundLocationPermissionIfNeeded(context, foregroundLocationLauncher, backgroundLocationLauncher)
+        },
+        spamDetectionAlertEnabled = spamDetectionAlertEnabled,
+        onSpamDetectionAlertEnabledChanged = { enabled ->
+            settingsRepository.setSpamDetectionAlertEnabledAsync(enabled)
         },
         loggingEnabled = loggingEnabled,
         onLoggingEnabledChanged = { enabled ->

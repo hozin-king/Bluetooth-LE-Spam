@@ -7,8 +7,11 @@ import android.bluetooth.le.AdvertisingSetCallback
 import android.bluetooth.le.BluetoothLeAdvertiser
 import android.content.Context
 import android.util.Log
+import de.simon.dankelmann.bluetoothlespam.Datastore.SettingsKeys
+import de.simon.dankelmann.bluetoothlespam.Datastore.SettingsRepository
 import de.simon.dankelmann.bluetoothlespam.Enums.AdvertisementError
 import de.simon.dankelmann.bluetoothlespam.Enums.TxPowerLevel
+import de.simon.dankelmann.bluetoothlespam.Helpers.AdvertisementTuningHelper
 import de.simon.dankelmann.bluetoothlespam.Helpers.BluetoothHelpers.Companion.bluetoothAdapter
 import de.simon.dankelmann.bluetoothlespam.Helpers.BluetoothHelpers.Companion.logMissingAdvertisingCapabilities
 import de.simon.dankelmann.bluetoothlespam.Interfaces.Callbacks.IAdvertisementServiceCallback
@@ -34,15 +37,37 @@ class ModernAdvertisementService(
             _advertiser = _bluetoothAdapter!!.bluetoothLeAdvertiser
             _bluetoothAdapter!!.logMissingAdvertisingCapabilities(_logTag)
         }
+
+        // Restore the TX power level persisted by the TX power dialog (or the preferences TX &
+        // Interval section) so the dialog's initial slider position and this session's runtime
+        // override match the last user choice. Missing values resolve to TX_POWER_HIGH, which is
+        // also what the generators hardcode, so defaults are unchanged.
+        val savedPowerLevel = AdvertisementTuningHelper.txPowerLevelFromName(
+            SettingsRepository.getInstance(context).current[SettingsKeys.TX_TUNING_POWER]
+        )
+        _txPowerLevel = savedPowerLevel
     }
 
+    /**
+     * Single choke point where model [AdvertisementSet]s are converted to framework
+     * [android.bluetooth.le.AdvertiseSettings]/[android.bluetooth.le.AdvertisingSetParameters]
+     * — every generator flows through here, so persisted TX tuning (per-target override first,
+     * else global TX power + interval) applies to all of them without touching any generator.
+     * Works on a copy; the incoming set is never mutated.
+     */
     fun prepareAdvertisementSet(advertisementSet: AdvertisementSet):AdvertisementSet{
+        val tunedSet = AdvertisementTuningHelper.applyTuning(
+            advertisementSet,
+            SettingsRepository.getInstance(context).current
+        )
+        // The runtime dialog level (_txPowerLevel, itself seeded from the persisted choice and
+        // re-persisted on every dialog change) still takes precedence, exactly as before.
         if(_txPowerLevel != null){
-            advertisementSet.advertiseSettings.txPowerLevel = _txPowerLevel!!
-            advertisementSet.advertisingSetParameters.txPowerLevel = _txPowerLevel!!
+            tunedSet.advertiseSettings.txPowerLevel = _txPowerLevel!!
+            tunedSet.advertisingSetParameters.txPowerLevel = _txPowerLevel!!
         }
-        advertisementSet.advertisingSetCallback = getAdvertisingSetCallback()
-        return advertisementSet
+        tunedSet.advertisingSetCallback = getAdvertisingSetCallback()
+        return tunedSet
     }
 
 

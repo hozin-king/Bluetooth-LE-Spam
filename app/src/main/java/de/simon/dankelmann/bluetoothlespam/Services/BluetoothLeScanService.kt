@@ -11,8 +11,12 @@ import android.content.Context
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import de.simon.dankelmann.bluetoothlespam.Datastore.SettingsKeys
+import de.simon.dankelmann.bluetoothlespam.Datastore.SettingsRepository
+import de.simon.dankelmann.bluetoothlespam.Enums.SpamPackageType
 import de.simon.dankelmann.bluetoothlespam.Helpers.BluetoothHelpers.Companion.bluetoothAdapter
 import de.simon.dankelmann.bluetoothlespam.Helpers.BluetoothLeDeviceClassificationHelper
+import de.simon.dankelmann.bluetoothlespam.Helpers.SpamDetectionAlertNotifier
 import de.simon.dankelmann.bluetoothlespam.Interfaces.Callbacks.IBluetoothLeScanCallback
 import de.simon.dankelmann.bluetoothlespam.Interfaces.Services.IBluetoothLeScanService
 import de.simon.dankelmann.bluetoothlespam.Models.BluetoothLeScanResult
@@ -21,6 +25,9 @@ import de.simon.dankelmann.bluetoothlespam.Models.SpamPackageScanResult
 import de.simon.dankelmann.bluetoothlespam.PermissionCheck.PermissionCheck
 import java.time.Duration
 import java.time.LocalDateTime
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 
 class BluetoothLeScanService(
     private val context: Context,
@@ -38,6 +45,19 @@ class BluetoothLeScanService(
     private val _millis_housekeeping_spam_packages:Long = 1000
     private val _millis_spam_package_lifetime = 5000
     private val _millis_flipper_device_lifetime = 5000
+
+    /**
+     * Per-type spam detection event timestamps for the detection-indicator UI
+     * (feature/spam-detection). In-memory only; entries expire 60s after recording
+     * ([_millis_spam_detection_window]) and are filtered on every read, so the UI
+     * automatically shows only recent detections.
+     */
+    private val _spamDetectionTimestamps = mutableMapOf<SpamPackageType, ArrayDeque<Long>>()
+    private val _millis_spam_detection_window = 60_000L
+    private val _spamDetectionCounts = MutableStateFlow<Map<SpamPackageType, Int>>(emptyMap())
+
+    /** Per-[SpamPackageType] count of spam packages detected in the last 60 seconds. */
+    val spamDetectionCounts: StateFlow<Map<SpamPackageType, Int>> = _spamDetectionCounts.asStateFlow()
 
     init {
         _bluetoothAdapter = context.bluetoothAdapter()
@@ -75,12 +95,14 @@ class BluetoothLeScanService(
         })
     }
 
-    // Cleanup Flipper Device List
+    // Cleanup Spam Package List
     fun startSpamPackagesHouseKeeping(){
         val mainHandler = Handler(Looper.getMainLooper())
         mainHandler.post(object : Runnable {
             override fun run() {
                 cleanSpamPackageList()
+                // Expire detection-indicator counters alongside the list cleanup
+                pruneExpiredSpamDetectionCounts()
                 mainHandler.postDelayed(this, _millis_housekeeping_spam_packages)
             }
         })
@@ -124,6 +146,74 @@ class BluetoothLeScanService(
                 callback.onSpamResultPackageListUpdated()
             }
         }
+    }
+
+    /**
+     * Records one detection event for [spamPackageType] and refreshes [spamDetectionCounts].
+     * Also posts a rate-limited alert notification when the user has alerts enabled.
+     */
+    private fun recordSpamDetection(spamPackageType: SpamPackageType) {
+        if (spamPackageType == SpamPackageType.UNKNOWN) return
+
+        synchronized(_spamDetectionTimestamps) {
+            pruneLocked()
+            val timestamps = _spamDetectionTimestamps.getOrPut(spamPackageType) { ArrayDeque() }
+            timestamps.addLast(System.currentTimeMillis())
+            emitCountsLocked()
+        }
+
+        val alertEnabled =
+            SettingsRepository.getInstance(context).current[SettingsKeys.SPAM_DETECTION_ALERT_ENABLED] ?: true
+        if (alertEnabled) {
+            SpamDetectionAlertNotifier.notifyIfAllowed(context, spamPackageType)
+        }
+    }
+
+    /**
+     * Drops detection events older than [_millis_spam_detection_window] and refreshes
+     * [spamDetectionCounts]; called from the spam-package housekeeping loop so the UI
+     * banner counts down even when nothing new is detected.
+     */
+    fun pruneExpiredSpamDetectionCounts() {
+        synchronized(_spamDetectionTimestamps) {
+            if (pruneLocked()) {
+                emitCountsLocked()
+            }
+        }
+    }
+
+    /** Clears all detection counters (wired to the banner's Reset button). */
+    fun resetSpamDetectionCounts() {
+        synchronized(_spamDetectionTimestamps) {
+            _spamDetectionTimestamps.clear()
+            emitCountsLocked()
+        }
+    }
+
+    /** Removes expired timestamps. Must hold the [_spamDetectionTimestamps] monitor. Returns
+     * true when anything was removed or a type ran dry. */
+    private fun pruneLocked(): Boolean {
+        val cutoff = System.currentTimeMillis() - _millis_spam_detection_window
+        var changed = false
+        val iterator = _spamDetectionTimestamps.iterator()
+        while (iterator.hasNext()) {
+            val entry = iterator.next()
+            val before = entry.value.size
+            entry.value.removeAll { it <= cutoff }
+            if (entry.value.isEmpty()) {
+                iterator.remove()
+                changed = true
+            } else if (entry.value.size != before) {
+                changed = true
+            }
+        }
+        return changed
+    }
+
+    /** Rebuilds the counts map from the (already pruned) timestamps. Must hold the
+     * [_spamDetectionTimestamps] monitor. */
+    private fun emitCountsLocked() {
+        _spamDetectionCounts.value = _spamDetectionTimestamps.mapValues { it.value.size }
     }
 
 
@@ -247,6 +337,11 @@ class BluetoothLeScanService(
             // Update
             _spamPackageScanResultList[elementIndex] = spamPackageScanResult
         }
+
+        // Detection indicator + alert notification (feature/spam-detection). Counts every
+        // classified spam package, including re-detections of already-known addresses; the
+        // classification itself is unchanged above.
+        recordSpamDetection(spamPackageScanResult.spamPackageType)
 
         _bluetoothLeScanServiceCallbacks.forEach {callback ->
             callback.onSpamResultPackageDetected(spamPackageScanResult, alreadyKnown)

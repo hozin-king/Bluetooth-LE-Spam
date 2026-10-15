@@ -17,6 +17,10 @@ import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.IAdvertise
 import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.FastPairDebugAdvertisementSetGenerator
 import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.FastPairNonProductionAdvertisementSetGenerator
 import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.FastPairPhoneSetupAdvertisementSetGenerator
+import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.HuaweiFastPairAdvertisementSetGenerator
+import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.JblFastPairAdvertisementSetGenerator
+import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.SonyFastPairAdvertisementSetGenerator
+import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.XiaomiFastPairAdvertisementSetGenerator
 import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.LovespousePlayAdvertisementSetGenerator
 import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.LovespouseStopAdvertisementSetGenerator
 import de.simon.dankelmann.bluetoothlespam.AdvertisementSetGenerators.SwiftPairAdvertisementSetGenerator
@@ -132,6 +136,10 @@ abstract class AppDatabase : RoomDatabase() {
                 FastPairPhoneSetupAdvertisementSetGenerator(),
                 FastPairNonProductionAdvertisementSetGenerator(),
                 FastPairDebugAdvertisementSetGenerator(),
+                XiaomiFastPairAdvertisementSetGenerator(),
+                SonyFastPairAdvertisementSetGenerator(),
+                JblFastPairAdvertisementSetGenerator(),
+                HuaweiFastPairAdvertisementSetGenerator(),
 
                 //ContinuityDevicePopUpAdvertisementSetGenerator(),
                 ContinuityNotYourDevicePopUpAdvertisementSetGenerator(),
